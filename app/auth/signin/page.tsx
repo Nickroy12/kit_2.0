@@ -2,26 +2,68 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate authentication
-    setTimeout(() => {
-      setIsLoading(false);
-      setSubmitted(true);
-    }, 800);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const email = (formData.get("email") as string)?.trim();
+    const password = (formData.get("password") as string) || "";
+    const rememberMe = formData.get("rememberMe") === "on";
+
+    if (!email) {
+      setErrorMessage("Please enter your email address.");
+      return;
+    }
+
+    if (!password) {
+      setErrorMessage("Please enter your password.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL: "/",
+        rememberMe,
+      });
+
+      if (error) {
+        setErrorMessage(error.message || "Invalid email or password. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      setSuccessMessage("Signed in successfully! Redirecting...");
+      setTimeout(() => {
+        router.push("/");
+        router.refresh();
+      }, 1000);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setErrorMessage(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 ">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="card bg-base-100 shadow-xl border border-base-200">
           <div className="card-body p-6 sm:p-8">
@@ -35,22 +77,47 @@ export default function SignInPage() {
               </p>
             </div>
 
-            {submitted && (
-              <div role="alert" className="alert alert-success text-sm py-2 mb-4">
+            {/* Error Alert */}
+            {errorMessage && (
+              <div
+                role="alert"
+                className="alert alert-error text-sm py-2.5 px-3.5 mb-4 shadow-sm flex items-start gap-2"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 shrink-0 stroke-current"
-                  fill="none"
-                  viewBox="0 0 24 24"
+                  className="h-5 w-5 shrink-0"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
                 >
                   <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
                   />
                 </svg>
-                <span>Signed in successfully! (Demo)</span>
+                <span className="flex-1">{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Success Alert */}
+            {successMessage && (
+              <div
+                role="alert"
+                className="alert alert-success text-sm py-2.5 px-3.5 mb-4 shadow-sm flex items-start gap-2 text-success-content"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 shrink-0"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="flex-1">{successMessage}</span>
               </div>
             )}
 
@@ -79,11 +146,11 @@ export default function SignInPage() {
                   </span>
                   <input
                     id="email-input"
+                    name="email"
                     type="email"
                     required
+                    disabled={loading}
                     placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
                     className="input input-bordered w-full pl-10 focus:input-primary transition-all"
                   />
                 </div>
@@ -95,12 +162,12 @@ export default function SignInPage() {
                   <label className="label p-0" htmlFor="password-input">
                     <span className="label-text font-medium text-base-content">Password</span>
                   </label>
-                  <a
-                    href="#"
+                  <Link
+                    href="/auth/forgot-password"
                     className="text-xs text-primary hover:underline transition-colors"
                   >
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-base-content/50">
@@ -121,23 +188,24 @@ export default function SignInPage() {
                   </span>
                   <input
                     id="password-input"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     required
+                    disabled={loading}
                     placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="input input-bordered w-full pl-10 pr-10 focus:input-primary transition-all"
+                    className="input input-bordered w-full pl-10 pr-12 focus:input-primary transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-base-content/50 hover:text-base-content transition-colors"
+                    className="btn btn-ghost btn-circle btn-xs absolute right-2.5 top-1/2 -translate-y-1/2 text-base-content/60 hover:text-base-content"
                     aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
+                        className="h-4 w-4"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -152,7 +220,7 @@ export default function SignInPage() {
                     ) : (
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
+                        className="h-4 w-4"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -180,6 +248,8 @@ export default function SignInPage() {
                 <input
                   type="checkbox"
                   id="remember-me"
+                  name="rememberMe"
+                  disabled={loading}
                   className="checkbox checkbox-primary checkbox-sm"
                 />
                 <label
@@ -193,11 +263,14 @@ export default function SignInPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={loading}
                 className="btn btn-primary w-full shadow-md font-semibold mt-2"
               >
-                {isLoading ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                {loading ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span>Signing in...</span>
+                  </>
                 ) : (
                   "Sign In"
                 )}

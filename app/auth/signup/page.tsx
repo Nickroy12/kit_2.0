@@ -2,27 +2,87 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { authClient, signOut } from "@/lib/auth-client";
 
 export default function SignUpPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate sign up
-    setTimeout(() => {
-      setIsLoading(false);
-      setSubmitted(true);
-    }, 800);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const name = (formData.get("name") as string)?.trim();
+    const email = (formData.get("email") as string)?.trim();
+    const password = (formData.get("password") as string) || "";
+    const terms = formData.get("terms");
+
+    if (!name) {
+      setErrorMessage("Please enter your full name.");
+      return;
+    }
+
+    if (!email) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (!terms) {
+      setErrorMessage("You must accept the terms and conditions to sign up.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await authClient.signUp.email({
+        name,
+        email,
+        password,
+        callbackURL: "/",
+      });
+
+      if (error) {
+        setErrorMessage(error.message || "Failed to create account. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // verify-email পেজে auto sign-in করার জন্য credentials সাময়িকভাবে সংরক্ষণ
+      // ব্রাউজার বন্ধ হলে sessionStorage স্বয়ংক্রিয়ভাবে মুছে যাবে
+      sessionStorage.setItem("pending_verify_email", email);
+      sessionStorage.setItem("pending_verify_password", password);
+
+      // সাইন-আপ সফল হওয়ার পরপরই session বাতিল করা হচ্ছে
+      // কারণ ইমেইল verify না হওয়া পর্যন্ত ইউজারকে লগইন দেখানো উচিত না
+      await signOut();
+
+      setSuccessMessage("Account created! A verification code has been sent to your email.");
+      setTimeout(() => {
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+      }, 1000);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setErrorMessage(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 ">
+    <div className="min-h-[calc(100vh-4rem)] bg-amber-200/80 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="card bg-base-100 shadow-xl border border-base-200">
           <div className="card-body p-6 sm:p-8">
@@ -36,22 +96,47 @@ export default function SignUpPage() {
               </p>
             </div>
 
-            {submitted && (
-              <div role="alert" className="alert alert-success text-sm py-2 mb-4">
+            {/* Error Alert */}
+            {errorMessage && (
+              <div
+                role="alert"
+                className="alert alert-error text-sm py-2.5 px-3.5 mb-4 shadow-sm flex items-start gap-2"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 shrink-0 stroke-current"
-                  fill="none"
-                  viewBox="0 0 24 24"
+                  className="h-5 w-5 shrink-0"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
                 >
                   <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
                   />
                 </svg>
-                <span>Account created successfully! (Demo)</span>
+                <span className="flex-1">{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Success Alert */}
+            {successMessage && (
+              <div
+                role="alert"
+                className="alert alert-success text-sm py-2.5 px-3.5 mb-4 shadow-sm flex items-start gap-2 text-success-content"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 shrink-0"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="flex-1">{successMessage}</span>
               </div>
             )}
 
@@ -80,11 +165,11 @@ export default function SignUpPage() {
                   </span>
                   <input
                     id="name-input"
+                    name="name"
                     type="text"
                     required
+                    disabled={loading}
                     placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
                     className="input input-bordered w-full pl-10 focus:input-primary transition-all"
                   />
                 </div>
@@ -114,11 +199,11 @@ export default function SignUpPage() {
                   </span>
                   <input
                     id="email-input"
+                    name="email"
                     type="email"
                     required
+                    disabled={loading}
                     placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
                     className="input input-bordered w-full pl-10 focus:input-primary transition-all"
                   />
                 </div>
@@ -148,11 +233,12 @@ export default function SignUpPage() {
                   </span>
                   <input
                     id="password-input"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     required
-                    placeholder="Create a strong password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    minLength={8}
+                    disabled={loading}
+                    placeholder="Create a strong password (min 8 chars)"
                     className="input input-bordered w-full pl-10 pr-12 focus:input-primary transition-all"
                   />
                   {/* Password Toggle Button */}
@@ -216,7 +302,9 @@ export default function SignUpPage() {
                 <input
                   type="checkbox"
                   id="terms"
+                  name="terms"
                   required
+                  disabled={loading}
                   className="checkbox checkbox-primary checkbox-sm mt-0.5"
                 />
                 <label
@@ -237,11 +325,14 @@ export default function SignUpPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={loading}
                 className="btn btn-primary w-full shadow-md font-semibold mt-2"
               >
-                {isLoading ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                {loading ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span>Creating account...</span>
+                  </>
                 ) : (
                   "Create Account"
                 )}

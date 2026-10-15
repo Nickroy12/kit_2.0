@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession, signOut } from "@/lib/auth-client";
 
 const navItems = [
   {
@@ -70,8 +71,20 @@ const navItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, isPending } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
+
+  // ইমেইল verify হয়েছে কিনা তা চেক করা হচ্ছে
+  // emailVerified false মানে ইউজার এখনও পুরোপুরি লগইন না
+  const isFullyLoggedIn = session?.user && session.user.emailVerified;
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+    router.refresh();
+  };
 
   // Close offcanvas drawer on route navigation (React 19 recommended pattern without effect)
   if (prevPathname !== pathname) {
@@ -186,20 +199,90 @@ export default function Navbar() {
             </nav>
           </div>
 
-          {/* Navbar Action Buttons (Sign In & Sign Up) */}
+          {/* Navbar Action Buttons (Sign In & Sign Up or User Dropdown) */}
           <div className="navbar-end flex items-center justify-end gap-2 sm:gap-3">
-            <Link
-              href="/auth/signin"
-              className="btn btn-ghost btn-sm sm:btn-md font-medium text-base-content hover:bg-base-200"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="btn btn-primary btn-sm sm:btn-md font-semibold text-white shadow-sm hover:shadow"
-            >
-              Sign Up
-            </Link>
+            {isPending ? (
+              <span className="loading loading-spinner loading-sm text-primary"></span>
+            ) : isFullyLoggedIn ? (
+              <div className="dropdown dropdown-end">
+                <button
+                  type="button"
+                  tabIndex={0}
+                  className="btn btn-ghost btn-circle p-0 hover:bg-primary/10 transition-colors"
+                  aria-label="User menu"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-base shadow-sm ring-2 ring-primary/25 hover:ring-primary transition-all">
+                    {session.user.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={session.user.image}
+                        alt={session.user.name || "User"}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <span className="leading-none">
+                        {(session.user.name || session.user.email || "U")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </button>
+                <ul
+                  tabIndex={0}
+                  className="menu menu-sm dropdown-content mt-3 z-50 p-2.5 shadow-2xl bg-base-100 rounded-2xl w-60 border border-base-200"
+                >
+                  <li className="px-3 py-2.5 border-b border-base-200/80 mb-1">
+                    <div className="flex flex-col gap-0.5 p-0 hover:bg-transparent cursor-default">
+                      <span className="font-semibold text-sm text-base-content truncate">
+                        {session.user.name || "User"}
+                      </span>
+                      <span className="text-xs text-base-content/60 truncate">
+                        {session.user.email}
+                      </span>
+                    </div>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="flex items-center gap-2 text-error hover:bg-error/10 font-medium py-2 rounded-lg transition-colors"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      <span>Sign Out</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="btn btn-ghost btn-sm sm:btn-md font-medium text-base-content hover:bg-base-200"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="btn btn-primary btn-sm sm:btn-md font-semibold text-white shadow-sm hover:shadow"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -233,7 +316,7 @@ export default function Navbar() {
               alt="Knowledge IT Institute"
               width={160}
               height={40}
-              className="w-auto  object-contain"
+              className="w-auto object-contain"
             />
           </Link>
           <button
@@ -295,7 +378,65 @@ export default function Navbar() {
         </div>
 
         {/* Drawer Footer Actions */}
-
+        <div className="p-4 border-t border-base-200/80 bg-base-200/30">
+          {isFullyLoggedIn ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-10 h-10 shrink-0 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-base shadow-sm ring-2 ring-primary/20">
+                  {session.user.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name || "User"}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span className="leading-none">
+                      {(session.user.name || session.user.email || "U")
+                        .charAt(0)
+                        .toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold truncate text-base-content">
+                    {session.user.name || "User"}
+                  </p>
+                  <p className="text-xs text-base-content/60 truncate">
+                    {session.user.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  handleSignOut();
+                }}
+                className="btn btn-outline btn-error btn-sm w-full font-medium"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Link
+                href="/auth/signin"
+                onClick={() => setIsOpen(false)}
+                className="btn btn-outline btn-primary btn-sm w-full font-medium"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/signup"
+                onClick={() => setIsOpen(false)}
+                className="btn btn-primary btn-sm w-full font-semibold text-white"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+        </div>
       </aside>
     </>
   );
