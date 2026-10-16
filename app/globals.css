@@ -5,6 +5,7 @@
 }
 
 @theme {
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --color-primary: #eb9710;
   --color-primary-content: #ffffff;
 }
@@ -12,4 +13,8 @@
 :root {
   --color-primary: #eb9710;
   --color-primary-content: #ffffff;
+}
+
+body {
+  font-family: var(--font-poppins), sans-serif;
 }

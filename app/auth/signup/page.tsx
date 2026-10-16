@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient, signOut } from "@/lib/auth-client";
+import Image from "next/image";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -87,7 +88,8 @@ export default function SignUpPage() {
         <div className="card bg-base-100 shadow-xl border border-base-200">
           <div className="card-body p-6 sm:p-8">
             {/* Header */}
-            <div className="text-center mb-6">
+            <div className="text-center flex flex-col justify-center items-center mb-6">
+              <Image src="/logo.png" alt="Logo" width={100} height={100} />
               <h1 className="text-2xl font-bold tracking-tight text-base-content">
                 Create an account
               </h1>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import Image from "next/image";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -63,12 +64,13 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-amber-200/80 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="card bg-base-100 shadow-xl border border-base-200">
           <div className="card-body p-6 sm:p-8">
             {/* Header */}
-            <div className="text-center mb-6">
+            <div className="text-center flex flex-col justify-center items-center mb-6">
+              <Image src="/logo.png" alt="Logo" width={100} height={100} />
               <h1 className="text-2xl font-bold tracking-tight text-base-content">
                 Welcome back
               </h1>
