@@ -99,6 +99,10 @@ export default function Navbar() {
     return pathname === href || pathname.startsWith(href + "/");
   };
 
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-base-300/60 bg-base-100/90 backdrop-blur-md">
@@ -139,16 +143,16 @@ export default function Navbar() {
                     key={item.href}
                     href={item.href}
                     className={`group relative py-2 text-1xl font-medium transition-colors duration-200 ${active
-                        ? "text-primary font-semibold"
-                        : "text-base-content/70 hover:text-primary"
+                      ? "text-primary font-semibold"
+                      : "text-base-content/70 hover:text-primary"
                       }`}
                   >
                     <span>{item.name}</span>
                     {/* Animated border-bottom transition */}
                     <span
                       className={`absolute bottom-0 left-0 h-[2.5px] rounded-full bg-primary transition-all duration-300 ease-in-out ${active
-                          ? "w-full opacity-100"
-                          : "w-0 opacity-0 group-hover:w-full group-hover:opacity-100"
+                        ? "w-full opacity-100"
+                        : "w-0 opacity-0 group-hover:w-full group-hover:opacity-100"
                         }`}
                     />
                   </Link>
@@ -252,9 +256,9 @@ export default function Navbar() {
 
       {/* Mobile Offcanvas Overlay / Backdrop */}
       <div
-        className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-xs transition-opacity duration-300 lg:hidden ${isOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
+        className={`fixed inset-0 z-[90] bg-black/60 backdrop-blur-xs transition-opacity duration-300 lg:hidden ${isOpen
+          ? "opacity-100 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
           }`}
         onClick={() => setIsOpen(false)}
         aria-hidden="true"
@@ -264,7 +268,7 @@ export default function Navbar() {
       <aside
         id="mobile-offcanvas-menu"
         aria-label="Mobile navigation"
-        className={`fixed top-0 bottom-0 left-0 z-50 w-80 max-w-[85vw] bg-base-100 shadow-2xl flex flex-col justify-between transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 bottom-0 left-0 z-[100] w-80 max-w-[85vw] bg-base-100 shadow-2xl flex flex-col justify-between transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         {/* Drawer Header */}
@@ -306,8 +310,8 @@ export default function Navbar() {
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${active
-                      ? "bg-primary/10 text-primary font-semibold shadow-xs"
-                      : "text-base-content/75 hover:bg-base-200 hover:text-base-content"
+                    ? "bg-primary/10 text-primary font-semibold shadow-xs"
+                    : "text-base-content/75 hover:bg-base-200 hover:text-base-content"
                     }`}
                 >
                   <span

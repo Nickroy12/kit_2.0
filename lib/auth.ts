@@ -41,6 +41,15 @@ export const auth = betterAuth({
   database: mongodbAdapter(db, {
     client,
   }),
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "user",
+      },
+    },
+  },
   // ৩. প্লাগইন অপশনে emailOTP কনফিগার করা হলো
   plugins: [
     emailOTP({
