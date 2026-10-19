@@ -1,93 +1,71 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import type { ComponentType } from "react";
-
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import {
-  HiOutlineHome,
-  HiOutlineUsers,
-  HiOutlineCog6Tooth,
-  HiOutlineChartBar,
-  HiOutlineFolder,
-  HiOutlineBars3,
-  HiOutlineXMark,
-  HiOutlineArrowRightOnRectangle,
-  HiOutlineShieldCheck,
-  HiOutlineAcademicCap,
-  HiOutlineBookOpen,
-  HiOutlineTrophy,
-} from "react-icons/hi2";
+  X,
+  Home,
+  Settings,
+  StickyNotePlus,
+  ShoppingCart,
+  LucideIcon,
+  TicketPercent,
+  LayoutDashboard,
+  LogOut,
+} from "lucide-react";
+import type { getUserSession } from "@/lib/core/session";
+import { signOut } from "@/lib/auth-client";
 
-import { useSession, signOut } from "@/lib/auth-client";
-
+// Define strict typing for navigation links
 interface NavigationLink {
-  title: string;
+  icon: LucideIcon;
   href: string;
-  icon: ComponentType<{ className?: string; size?: number }>;
+  name: string;
   exact?: boolean;
 }
 
-// Admin Navigation Links (similar to rentigo's adminLinks)
+type ServerSession = Awaited<ReturnType<typeof getUserSession>>;
+
+interface DashboardSidebarProps {
+  session?: ServerSession;
+}
+
+// Unified Navigation Links for Consumers matching domain & dashboard routes
+const consumerLinks: NavigationLink[] = [
+  { icon: Home, href: "/dashboard/User", name: "Dashboard", exact: true },
+  { icon: TicketPercent, href: "/dashboard/renter/booked", name: "My Booking" },
+  { icon: Settings, href: "/dashboard/profile", name: "Profile" },
+];
+
 const adminLinks: NavigationLink[] = [
-  { title: "Admin Overview", href: "/dashboard/admin", icon: HiOutlineShieldCheck, exact: true },
-  { title: "Manage Students", href: "/dashboard/admin/users", icon: HiOutlineUsers },
-  { title: "Manage Courses", href: "/dashboard/admin/courses", icon: HiOutlineBookOpen },
-  { title: "Analytics", href: "/dashboard/admin/analytics", icon: HiOutlineChartBar },
-  { title: "Settings", href: "/dashboard/admin/settings", icon: HiOutlineCog6Tooth },
+  { icon: Home, href: "/dashboard/admin", name: "Dashboard", exact: true },
+  { icon: StickyNotePlus, href: "/dashboard/admin/new", name: "Add New Car" },
+  { icon: StickyNotePlus, href: "/dashboard/admin/management", name: "Car Management" },
+  { icon: ShoppingCart, href: "/dashboard/admin/purchaseInfo", name: "Purchase Info" },
+  { icon: Settings, href: "/dashboard/profile", name: "Profile" },
 ];
 
-// User / Student Navigation Links (similar to rentigo's consumerLinks)
-const userLinks: NavigationLink[] = [
-  { title: "My Learning", href: "/dashboard/User", icon: HiOutlineHome, exact: true },
-  { title: "My Courses", href: "/dashboard/User/courses", icon: HiOutlineBookOpen },
-  { title: "Certificates", href: "/dashboard/User/certificates", icon: HiOutlineTrophy },
-  { title: "Settings", href: "/dashboard/User/settings", icon: HiOutlineCog6Tooth },
-];
-
-export default function Sidebar() {
+export default function DashboardSidebar({ session }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [open, setOpen] = useState<boolean>(false);
+  const [isSigningOut, setIsSigningOut] = useState<boolean>(false);
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
+  // Dynamically switch links based on user role
+  const userRole = ((session?.user as { role?: string })?.role || "user").toLowerCase();
+  const currentLinks = userRole === "admin" ? adminLinks : consumerLinks;
 
-  const { data: session, isPending } = useSession();
-
-  const user = session?.user;
-  const name = user?.name || "User";
-  const email = user?.email || "";
-  const role = ((user as { role?: string })?.role || "user").toLowerCase();
-
-  // Dynamically switch links based on user role (rentigo pattern)
-  const navItems = role === "admin" ? adminLinks : userLinks;
-
-  const initials =
-    name
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "U";
-
-  // Close sidebar after navigation
-  const closeSidebar = () => setIsOpen(false);
-
-  // Sign out using Better Auth
   const handleSignOut = async () => {
     if (isSigningOut) return;
-
     setIsSigningOut(true);
 
     try {
       await signOut({
         fetchOptions: {
           onSuccess: () => {
-            setIsOpen(false);
+            setOpen(false);
             router.replace("/auth/signin");
             router.refresh();
           },
@@ -102,150 +80,153 @@ export default function Sidebar() {
     }
   };
 
-  return (
-    <>
-      {/* Mobile backdrop: below sidebar and toggle button */}
-      {isOpen && (
-        <button
-          type="button"
-          aria-label="Close sidebar backdrop"
-          onClick={closeSidebar}
-          className="fixed inset-0 top-20 z-[40] bg-black/40 lg:hidden"
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        id="dashboard-sidebar"
-        className={`fixed inset-y-0 left-0 top-20 z-[45] flex w-64 flex-col border-r border-base-300 bg-base-100 shadow-xl transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:top-0 lg:translate-x-0 lg:shadow-none`}
-      >
-        {/* Brand */}
-        <div className="flex h-20 shrink-0 items-center gap-3 border-b border-base-300 px-6">
-          <Link href="/" className="flex items-center gap-2">
+  const renderSidebarContent = () => (
+    <div className="flex flex-col h-full w-full text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-950">
+      {/* Brand & Profile Section */}
+      <div className="p-5 bg-blue-500 rounded-b-3xl dark:border-zinc-900 flex flex-col gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          {/* Accent Avatar using image or user's initial */}
+          {session?.user?.image ? (
             <Image
-              src="/logo.png"
-              width={160}
+              src={session.user.image}
+              alt={session?.user?.name || "User"}
+              width={40}
               height={40}
-              alt="Knowledge IT"
-              priority
-              className="w-auto object-contain"
+              unoptimized
+              className="w-10 h-10 rounded-full object-cover shrink-0 border border-blue-200/50"
             />
-          </Link>
+          ) : (
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/30">
+              {session?.user?.name?.charAt(0) || "U"}
+            </div>
+          )}
+
+          <div className="text-sm space-y-0.5 min-w-0">
+            <p className="font-semibold truncate text-white">
+              {session?.user?.name || "User"}
+            </p>
+            <p className="text-blue-100 text-xs truncate">
+              {session?.user?.email || ""}
+            </p>
+          </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1.5 overflow-y-auto p-4">
-          <div className="flex items-center justify-between mb-3 px-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
-              {role === "admin" ? "Admin Panel" : "Student Area"}
-            </p>
-            <span
-              className={`badge badge-xs font-bold uppercase ${
-                role === "admin" ? "badge-primary" : "badge-neutral"
+        {/* Plan / Role Status Badge */}
+        <div>
+          <span className="inline-block px-3 py-1 text-xs font-medium bg-blue-50 text-blue-600 dark:bg-green-950/30 dark:text-green-400 rounded-full border border-green-200/50 dark:border-green-900/30 capitalize">
+            {userRole === "admin"
+              ? "Admin"
+              : userRole === "renter"
+              ? "Renter"
+              : "Student"}
+          </span>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        {currentLinks.map((item) => {
+          const Icon = item.icon;
+
+          const active = item.exact
+            ? pathname === item.href
+            : pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                active
+                  ? "bg-blue-600 text-white font-semibold shadow-sm border border-blue-700"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/10"
               }`}
             >
-              {role}
-            </span>
-          </div>
-
-          {navItems.map((item) => {
-            const Icon = item.icon;
-
-            const isActive = item.exact
-              ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={closeSidebar}
-                aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
-                }`}
-              >
-                <Icon size={20} />
-                <span>{item.title}</span>
-
-                {isActive && (
-                  <span className="ml-auto h-2 w-2 rounded-full bg-primary" />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* User session and sign out */}
-        <div className="shrink-0 border-t border-base-300 p-4">
-          {isPending ? (
-            <div className="flex animate-pulse items-center gap-3 p-2">
-              <div className="h-10 w-10 rounded-full bg-base-300" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="h-3 w-24 rounded bg-base-300" />
-                <div className="h-3 w-32 rounded bg-base-300" />
-              </div>
-            </div>
-          ) : user ? (
-            <div className="flex items-center gap-3 rounded-xl bg-base-200/60 p-3">
-              {user.image ? (
-                <img
-                  src={user.image}
-                  alt={`${name}'s profile`}
-                  referrerPolicy="no-referrer"
-                  className="h-10 w-10 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 font-semibold text-primary">
-                  {initials}
-                </div>
-              )}
-
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{name}</p>
-                <p className="truncate text-xs text-base-content/60">
-                  {email}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSignOut}
-                disabled={isSigningOut}
-                aria-label="Sign out"
-                title="Sign out"
-                className="shrink-0 rounded-lg p-2 text-base-content/60 transition hover:bg-base-300 hover:text-error disabled:opacity-50"
-              >
-                <HiOutlineArrowRightOnRectangle size={20} />
-              </button>
-            </div>
-          ) : (
-            <Link
-              href="/auth/signin"
-              className="btn btn-outline btn-primary btn-sm w-full rounded-xl"
-            >
-              Sign In
+              <Icon
+                size={18}
+                className={active ? "text-white" : "text-zinc-400 dark:text-zinc-500"}
+              />
+              <span className="text-sm">{item.name}</span>
             </Link>
-          )}
-        </div>
-      </aside>
+          );
+        })}
+      </nav>
 
-      {/* Mobile toggle button (placed inside navbar height) */}
-      <div className="fixed left-4 top-5 z-[50] lg:hidden">
+      {/* Sign Out Action */}
+      <div className="p-4 border-t border-zinc-100 dark:border-zinc-900 mt-auto">
         <button
           type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          aria-expanded={isOpen}
-          aria-controls="dashboard-sidebar"
-          aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-base-300 bg-base-100 shadow-sm transition hover:bg-base-200"
+          onClick={handleSignOut}
+          disabled={isSigningOut}
+          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200 text-sm font-medium disabled:opacity-50"
         >
-          {isOpen ? <HiOutlineXMark size={22} /> : <HiOutlineBars3 size={22} />}
+          <LogOut size={18} className="text-zinc-400" />
+          <span>{isSigningOut ? "Signing out..." : "Sign Out"}</span>
         </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden border-b p-4 flex items-center justify-between bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-zinc-800 dark:text-zinc-200 p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+          aria-label="Open menu"
+        >
+          <LayoutDashboard size={24} />
+        </button>
+
+        <span className="font-semibold text-sm text-blue-600">Knowledge IT</span>
+
+        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-blue-50 text-blue-600 border border-blue-200">
+          {session?.user?.name?.charAt(0) || "U"}
+        </div>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 h-screen sticky top-0 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex-col shrink-0">
+        {renderSidebarContent()}
+      </aside>
+
+      {/* Mobile Drawer */}
+      <div
+        className={`fixed inset-0 z-50 md:hidden ${
+          open ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+      >
+        {/* Overlay */}
+        <div
+          onClick={() => setOpen(false)}
+          className={`absolute inset-0 bg-black/40 dark:bg-black/60 transition-opacity duration-300 ${
+            open ? "opacity-100" : "opacity-0"
+          }`}
+        />
+
+        {/* Drawer */}
+        <div
+          className={`absolute top-0 left-0 h-screen w-72 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 transform transition-transform duration-300 flex flex-col ${
+            open ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex items-center justify-between p-4 border-b border-zinc-100 dark:border-zinc-900">
+            <h2 className="text-blue-600 dark:text-blue-500 font-semibold"> Menu </h2>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-zinc-500 dark:text-zinc-400 hover:text-blue-600 p-1"
+              aria-label="Close menu"
+            >
+              <X size={22} />
+            </button>
+          </div>
+
+          {renderSidebarContent()}
+        </div>
       </div>
     </>
   );
