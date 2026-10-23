@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { authClient, signOut } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import Image from "next/image";
 
 export default function SignUpPage() {
@@ -62,18 +62,9 @@ export default function SignUpPage() {
         return;
       }
 
-      // verify-email পেজে auto sign-in করার জন্য credentials সাময়িকভাবে সংরক্ষণ
-      // ব্রাউজার বন্ধ হলে sessionStorage স্বয়ংক্রিয়ভাবে মুছে যাবে
-      sessionStorage.setItem("pending_verify_email", email);
-      sessionStorage.setItem("pending_verify_password", password);
-
-      // সাইন-আপ সফল হওয়ার পরপরই session বাতিল করা হচ্ছে
-      // কারণ ইমেইল verify না হওয়া পর্যন্ত ইউজারকে লগইন দেখানো উচিত না
-      await signOut();
-
-      setSuccessMessage("Account created! A verification code has been sent to your email.");
+      setSuccessMessage("Account created successfully! Please sign in.");
       setTimeout(() => {
-        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+        router.push("/auth/signin");
       }, 1000);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "An unexpected error occurred.";

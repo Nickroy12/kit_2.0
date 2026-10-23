@@ -160,17 +160,9 @@ export default function SignInPage() {
 
               {/* Field 2: Password */}
               <div className="form-control">
-                <div className="flex items-center justify-between pb-1.5">
-                  <label className="label p-0" htmlFor="password-input">
-                    <span className="label-text font-medium text-base-content">Password</span>
-                  </label>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-xs text-primary hover:underline transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+                <label className="label pb-1.5" htmlFor="password-input">
+                  <span className="label-text font-medium text-base-content">Password</span>
+                </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-base-content/50">
                     <svg

@@ -47,9 +47,7 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
 
-  // ইমেইল verify হয়েছে কিনা তা চেক করা হচ্ছে
-  // emailVerified false মানে ইউজার এখনও পুরোপুরি লগইন না
-  const isFullyLoggedIn = session?.user && session.user.emailVerified;
+  const isFullyLoggedIn = !!session?.user;
 
   const handleSignOut = async () => {
     await signOut();

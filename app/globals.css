@@ -4,15 +4,34 @@
   themes: light --default;
 }
 
+/* Disable dark mode — light only */
+@variant dark (&:not(.dark));
+
 @theme {
   --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --color-primary: #eb9710;
   --color-primary-content: #ffffff;
 }
 
-:root {
-  --color-primary: #eb9710;
-  --color-primary-content: #ffffff;
+:root,
+[data-theme="light"],
+[data-theme] {
+  --color-primary: #eb9710 !important;
+  --color-primary-content: #ffffff !important;
+  --p: #eb9710 !important;
+  --pc: #ffffff !important;
+}
+
+.bg-primary {
+  background-color: #eb9710 !important;
+}
+
+.text-primary {
+  color: #eb9710 !important;
+}
+
+.border-primary {
+  border-color: #eb9710 !important;
 }
 
 body {

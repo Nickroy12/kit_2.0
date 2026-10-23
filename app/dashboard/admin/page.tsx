@@ -19,7 +19,7 @@ export default async function AdminPage() {
               Admin Control Panel
             </h1>
             <p className="text-sm text-base-content/70">
-              Logged in as <span className="font-semibold text-primary">{user?.name || user?.email}</span> (Role: <span className="badge badge-primary badge-sm font-semibold uppercase">{user?.role || "admin"}</span>)
+              Logged in as <span className="font-semibold text-primary">{user?.name || user?.email}</span>
             </p>
           </div>
         </div>
@@ -33,7 +33,7 @@ export default async function AdminPage() {
               <p className="text-xs font-medium uppercase text-base-content/60">Total Students</p>
               <h3 className="mt-1 text-2xl font-bold">1,248</h3>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <HiOutlineUsers className="h-5 w-5" />
             </div>
           </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import { Toaster } from "react-hot-toast";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,6 +28,7 @@ export default function RootLayout({
       className={`${poppins.variable} font-sans h-full antialiased`}
     >
       <body className={`${poppins.className} min-h-full flex flex-col bg-base-100 text-base-content`}>
+        <Toaster position="top-right" />
         <Navbar />
         <main className="flex-1">{children}</main>
       </body>
