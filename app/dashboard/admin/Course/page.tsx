@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Camera, Check, Sparkles, Tag, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadImage } from '@/lib/core/imgbb';
+import { addCourse } from '@/lib/action';
 
 interface CourseFormData {
   courseName: string;
@@ -112,15 +113,15 @@ const NewCourse: React.FC = () => {
       const imageUrl = await uploadImage(formData.image);
 
       // Step 2: Prepare course data
-      const courseData = {
+      const courseData  = {
         courseName: formData.courseName.trim(),
         description: formData.description.trim(),
         image: imageUrl,
         price,
         discount: formData.discountEnabled ? discount : null,
       };
-
-      console.log('New course:', courseData);
+      const data = await addCourse(courseData);
+      console.log('New course:', data);
       toast.success('Course created & image uploaded successfully!');
     } catch (err) {
       const errorMessage =

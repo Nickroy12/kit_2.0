@@ -1,6 +1,8 @@
 import { roleRequired } from "@/lib/core/session";
 import React, { ReactNode } from "react";
 
+export const instant = false;
+
 const AdminLayout = async ({
   children,
 }: {

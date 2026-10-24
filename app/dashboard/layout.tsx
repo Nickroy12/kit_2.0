@@ -3,6 +3,8 @@ import DashboardSidebar from "./components/sidebar";
 import { getUserSession } from "@/lib/core/session";
 import { Bell } from "lucide-react";
 
+export const instant = false;
+
 export default async function DashboardLayout({
   children,
 }: Readonly<{
