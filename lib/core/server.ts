@@ -23,9 +23,15 @@ export const serverMutation = async <T = unknown, U = unknown>(
   return res.json() as Promise<T>;
 };
 
-export const serverFetch = async <T = unknown>(path: string): Promise<T | Record<string, never>> => {
+export const serverFetch = async <T = unknown>(
+  path: string,
+  options?: RequestInit
+): Promise<T | Record<string, never>> => {
   try {
-    const res = await fetch(`${baseUrl}${path}`);
+    const res = await fetch(`${baseUrl}${path}`, {
+      cache: "no-store",
+      ...options,
+    });
     return await res.json() as T;
   } catch (error) {
     console.error(error);

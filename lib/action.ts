@@ -4,6 +4,7 @@ import { serverMutation } from "./core/server";
 
 export interface FinalCourseFormData {
   courseName: string;
+  slug?: string;
   description: string;
   image: string;
   price: number;

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Camera, Check, Sparkles, Tag, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadImage } from '@/lib/core/imgbb';
 import { addCourse } from '@/lib/action';
+import { slugify } from '@/lib/utils';
 
 interface CourseFormData {
   courseName: string;
@@ -15,15 +16,18 @@ interface CourseFormData {
   discount: string;
 }
 
+const initialFormData: CourseFormData = {
+  courseName: '',
+  description: '',
+  image: null,
+  price: '',
+  discountEnabled: false,
+  discount: '',
+};
+
 const NewCourse: React.FC = () => {
-  const [formData, setFormData] = useState<CourseFormData>({
-    courseName: '',
-    description: '',
-    image: null,
-    price: '',
-    discountEnabled: false,
-    discount: '',
-  });
+  const [formData, setFormData] = useState<CourseFormData>(initialFormData);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [imagePreview, setImagePreview] = useState('');
   const [loading, setLoading] = useState(false);
@@ -66,6 +70,9 @@ const NewCourse: React.FC = () => {
     e.stopPropagation();
     setFormData((prev) => ({ ...prev, image: null }));
     setImagePreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleDiscountToggle = () => {
@@ -113,8 +120,9 @@ const NewCourse: React.FC = () => {
       const imageUrl = await uploadImage(formData.image);
 
       // Step 2: Prepare course data
-      const courseData  = {
+      const courseData = {
         courseName: formData.courseName.trim(),
+        slug: slugify(formData.courseName.trim()),
         description: formData.description.trim(),
         image: imageUrl,
         price,
@@ -123,6 +131,13 @@ const NewCourse: React.FC = () => {
       const data = await addCourse(courseData);
       console.log('New course:', data);
       toast.success('Course created & image uploaded successfully!');
+
+      // Reset form fields
+      setFormData(initialFormData);
+      setImagePreview('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Something went wrong.';
@@ -213,6 +228,7 @@ const NewCourse: React.FC = () => {
                   )}
 
                   <input
+                    ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
